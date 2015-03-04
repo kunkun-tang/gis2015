@@ -1,6 +1,9 @@
 #+TITLE: SIGSPATIAL CUP 2015
 #+OPTIONS: toc:nil
 #+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \usepackage{marginnote}
+#+LATEX_HEADER: \usepackage{microtype}
+#+LATEX_HEADER: \usepackage[inner=2.5cm,outer=6cm,marginparwidth=3.5cm, marginparsep=.5cm]{geometry}
 #+LATEX_HEADER: \usetikzlibrary{shapes,arrows,positioning}
 #+LATEX_HEADER: \usepackage[backend=bibtex, style=numeric]{biblatex}
 #+LATEX_HEADER: \addbibresource{/home/gongzhitaao/Documents/gis2015/ref.bib}
@@ -57,12 +60,15 @@ solutions for SIGSPATIAL CUP 2015.
    on at \(B\).  Thus, there should an edge \(B\to A\), which is
    contradictory.
 
-   To solve this, we consider using the undirected graph.  But at each
-   vertex, we store a dictionary of next possible stops for each
-   coming vertex.  For example, the information we keep at \(B\) is
-   \(\{A: \{C, D\}, C: \{A, D\}, D: \{C\}\}\).  During a graph
-   traversal, we need to keep the previous vertex, which is trivial in
-   implementation.
+   To solve this, we consider using the undirected graph.  But
+   globally, we keep a hash map containing all the turn restrictions
+   \marginnote{Suggested by liang, to make it more space efficient}.
+   For example, the information we keep for Figure [[fig:turn]] is
+   \(\{\langle D, B\rangle\to \{A\}\}\), with index being an /ordered/
+   pair, e.g. \(\langle D, B\rangle\), and value being an /unordered/
+   set containing all the restricted turns, e.g. \(\{A\}\).  During a
+   graph traversal, we need to keep the previous vertex, which is
+   trivial in implementation.
 
 ** Shortest Distance and Time
 
@@ -148,4 +154,4 @@ solutions for SIGSPATIAL CUP 2015.
   #  LocalWords:  backend bibtex biblatex addbibresource tex img et al
   #  LocalWords:  undirected isothetic Cherkassky Fredman dijkstra sqrt
   #  LocalWords:  Ahuja printbibliography VanEmdeboas radix Thorup
-  #  LocalWords:  Raman shapefile Warmerdam
+  #  LocalWords:  Raman shapefile Warmerdam unordered

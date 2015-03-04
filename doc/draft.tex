@@ -1,4 +1,4 @@
-% Created 2015-03-03 Tue 17:22
+% Created 2015-03-04 Wed 08:54
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -17,6 +17,9 @@
 \usepackage{hyperref}
 \tolerance=1000
 \usepackage{tikz}
+\usepackage{marginnote}
+\usepackage{microtype}
+\usepackage[inner=2.5cm,outer=6cm,marginparwidth=3.5cm, marginparsep=.5cm]{geometry}
 \usetikzlibrary{shapes,arrows,positioning}
 \usepackage[backend=bibtex, style=numeric]{biblatex}
 \addbibresource{/home/gongzhitaao/Documents/gis2015/ref.bib}
@@ -89,12 +92,15 @@ exist.  However traffic coming from \(C\) is allowed to go straight
 on at \(B\).  Thus, there should an edge \(B\to A\), which is
 contradictory.
 
-To solve this, we consider using the undirected graph.  But at each
-vertex, we store a dictionary of next possible stops for each
-coming vertex.  For example, the information we keep at \(B\) is
-\(\{A: \{C, D\}, C: \{A, D\}, D: \{C\}\}\).  During a graph
-traversal, we need to keep the previous vertex, which is trivial in
-implementation.
+To solve this, we consider using the undirected graph.  But
+globally, we keep a hash map containing all the turn restrictions
+\marginnote{Suggested by liang, to make it more space efficient}.
+For example, the information we keep for Figure \ref{fig:turn} is
+\(\{\langle D, B\rangle\to \{A\}\}\), with index being an \emph{ordered}
+pair, e.g. \(\langle D, B\rangle\), and value being an \emph{unordered}
+set containing all the restricted turns, e.g. \(\{A\}\).  During a
+graph traversal, we need to keep the previous vertex, which is
+trivial in implementation.
 
 \subsection{Shortest Distance and Time}
 \label{sec-2-2}
