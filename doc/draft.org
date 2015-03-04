@@ -1,0 +1,151 @@
+#+TITLE: SIGSPATIAL CUP 2015
+#+OPTIONS: toc:nil
+#+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \usetikzlibrary{shapes,arrows,positioning}
+#+LATEX_HEADER: \usepackage[backend=bibtex, style=numeric]{biblatex}
+#+LATEX_HEADER: \addbibresource{/home/gongzhitaao/Documents/gis2015/ref.bib}
+#+LATEX_HEADER: \input{conf.tex}
+
+#+BEGIN_ABSTRACT
+This draft summarizes the problem, restrictions, concerns and possible
+solutions for SIGSPATIAL CUP 2015.
+#+END_ABSTRACT
+
+* Problem
+
+  In route planning one has to consider various restrictions like
+  turns, speed restrictions, one-way streets, etc.  In this cup, in
+  addition to the commonly used turn and speed restrictions, the
+  solution to the shortest path implementation should also satisfy the
+  polygonal obstacles.  Obstacles will be defined in terms of \(k\)
+  /convex/ polygons.  Shortest paths should avoid crossing these
+  polygons.
+
+  - Input :: A road network, a set of interconnecting lines and points
+       that represent a system of roads in a given region.
+  - Output :: Shortest path, based on distance or time between source
+       and destination nodes and satisfies a given set of constraints.
+  - Constraints :: Various constraints are applied,
+    1. Should obey turn restrictions where available,
+    2. speed restrictions, and
+    3. Should obey polygonal obstacles.
+
+* Restrictions
+
+  In this section we review the restrictions and our draft solutions
+  to each restriction.
+
+** Turn Restriction
+
+   A turn restriction at a junction is not limited to turns, but can
+   also be used for instance if you are only allowed to go straight
+   on \cite{osm:wiki:restriction}.
+
+   Directed graph may not be a valid solution for this.  Consider the
+   following case shown in Figure [[fig:turn]].
+
+   #+NAME: fig:turn
+   \begin{figure}[ht]
+   \centering
+   \input{img/turn.tex}
+   \caption{Turn restriction}\label{fig:turn}
+   \end{figure}
+
+   Traffic coming from \(D\) is not allowed to turn right at \(B\).
+   In a directed graph representation, the edge \(B\to A\) does not
+   exist.  However traffic coming from \(C\) is allowed to go straight
+   on at \(B\).  Thus, there should an edge \(B\to A\), which is
+   contradictory.
+
+   To solve this, we consider using the undirected graph.  But at each
+   vertex, we store a dictionary of next possible stops for each
+   coming vertex.  For example, the information we keep at \(B\) is
+   \(\{A: \{C, D\}, C: \{A, D\}, D: \{C\}\}\).  During a graph
+   traversal, we need to keep the previous vertex, which is trivial in
+   implementation.
+
+** Shortest Distance and Time
+
+   Although the problem specify two metrics, distance and time, they
+   make no difference in implementation.  Both are edge weights.  Each
+   road segment has speed limit.  Road segment length divided by its
+   speed limit yields the shortest time for this segment.  We can
+   store both weights in each edge.
+
+** Polygon Obstacle
+
+   There exist /convex/ polygon obstacles and no path should go
+   through any of these.  This is the tricky part.  However there is a
+   strong assumption that the polygons are /convex/, which makes the
+   problem much easier.  For this restrictions, a straightforward
+   solution is to remove any vertices and edges attached to them
+   inside a polygon obstacle.  This is, however, time-consuming.  For
+   a single point and a polygon, the complexity of Point-in Polygon
+   (PIP) check is linear, \(O(n)\), where \(n\) is the number of
+   vertices in a polygon.  This will give us the optimal solution with
+   any shortest path algorithm.  A more aggressive solution would be
+   removing points inside the isothetic minimum bounding rectangles of
+   these polygons.  Then for a single point and a polygon, the PIP
+   test is constant.  This may yields sub-optimal solution, however
+   this will speed up the program significantly.  Further conclusion
+   about the accuracy and speedup will await until our benchmark.
+
+* Shortest Path Algorithm
+
+  Single source shortest path is a well studied problem in graph
+  theory.  Dijkstra's algorithm \cite{Dijkstra:1959}, conjured by
+  Dijkstra in 1959, is the earlier one within my knowledge.  And
+  Bellman et al. extended Dijkstra's algorithm to graph with negative
+  edge weights \cite{bellman:1958} around 1958.  And later in 1968,
+  Hart et al. published a general form of Dijkstra's algorithm, named
+  the \(A^*\) search which achieves better performance by using
+  /heuristics/.  Please refer to the more comprehensive survey
+  \cite{Cherkassky:1996} on this topic.
+
+  Since we are not dealing with negative edge weights, here we only
+  consider Dijkstra's algorithm and its generalized form, \(A^*\).
+  And their only difference is the cost function during the search,
+  so we do not distinguish them and use the name Dijkstra's algorithm
+  in our discussion.
+
+  The complexity of original Dijkstra's algorithm without a
+  min-priority queue is \(O(|V|^2)\).  Using Fibonacci heap based
+  min-priority queue \cite{Fredman:1984} brings the complexity down
+  to \(O(|E| + |V|\log|V|)\).  This is asymptotically the fastest
+  known single-source shortest-path algorithm for arbitrary graph
+  with unbounded non-negative weights.  With more assumptions,
+  however, this complexity could be further reduced.  According to
+  \cite{Wikipedia:dijkstra}, when edge weights are integers and
+  bounded by a constant \(C\), the usage of a special priority queue
+  structure \cite{VanEmdeboas:1976} brings the complexity down to
+  \(O(|E|\log\log|C|)\).  And another implementation based on a
+  combination of a new radix heap and Fibonacci Heap runs in
+  \(O(|E| + |V|\sqrt{\log|V|})\) \cite{Ahuja:1990}.  The algorithm
+  given by \cite{Thorup:2000} runs in \(O(|E|\log\log|V|)\) and the
+  one given by \cite{Raman:1997} runs in
+  \(O(|E| + |V|\min{\left\{(\log|V|)^{1/3+\epsilon},
+  (\log|C|)^{1/4+\epsilon}\right\}}\).  And finally
+  \cite{Thorup:1999} shows the Dijkstra's algorithm can be completed
+  in linear time \(O(|V|+|E|)\).
+
+  The method \cite{Thorup:1999} is enticing.  We can multiply the all
+  the weights by 1000 and leave out the remaining after the decimal
+  point.  This may give us some rounding error and result in
+  sub-optimal solution, however the running time is unbeatable.
+
+* Miscellaneous
+
+  The data are stored in shapefile \cite{Wikipedia:shapefile}.
+  Although there is an open source library \cite{Warmerdam}, we may
+  not need to parse all the information.  So we need a simplified and
+  hopefully faster version to extract all relevant information while
+  skipping all information we do not need for processing.
+
+  \small\printbibliography
+
+
+  #  LocalWords:  SIGSPATIAL toc usepackage tikz usetikzlibrary conf
+  #  LocalWords:  backend bibtex biblatex addbibresource tex img et al
+  #  LocalWords:  undirected isothetic Cherkassky Fredman dijkstra sqrt
+  #  LocalWords:  Ahuja printbibliography VanEmdeboas radix Thorup
+  #  LocalWords:  Raman shapefile Warmerdam

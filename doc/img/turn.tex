@@ -1,0 +1,21 @@
+\begin{tikzpicture}
+  \tikzstyle{vertex} = [draw,circle,fill=gray,inner sep=2pt]
+  \tikzstyle{cross} = [cross out,draw,minimum
+  size=2*(#1-\pgflinewidth), inner sep=0pt, outer sep=0pt]
+
+  \node [vertex,label={above:A}] at (-3, 0) (a) {};
+  \node [vertex,label={above:B}] at (0, 0) (b) {};
+  \node [vertex,label={above:C}] at (3, 0) (c) {};
+  \node [vertex,label={right:D}] at (0, -3) (d) {};
+
+  \draw (a) -- (b) -- (c); \draw (b) -- (d);
+
+  \path [draw,->,>=stealth',rounded corners]
+  ([yshift=3em,xshift=-2em]d.north west) |-
+  ([yshift=-2em,xshift=2em]a.south east);
+
+  \path [draw,->,>=stealth'] ([yshift=2em,xshift=-3em]c.north west) --
+  ([yshift=2em,xshift=3em]a.north east);
+
+  \draw (-.9,-.9) node[cross,red,minimum size=1em] {};
+\end{tikzpicture}
