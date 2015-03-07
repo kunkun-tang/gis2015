@@ -1,2 +1,5 @@
+shapefil.h
+timeit.h
+
 *.a
 *.o
