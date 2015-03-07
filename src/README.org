@@ -1,0 +1,31 @@
+
+* Shape definition
+
+   - NULL
+
+        #define SHPT_NULL         0
+
+   - 2D Shape Types (pre ArcView 3.x):
+
+        #define SHPT_POINT        1     Points
+        #define SHPT_ARC          3     Arcs (Polylines, possible in parts)
+        #define SHPT_POLYGON      5     Polygons (possible in parts)
+        #define SHPT_MULTIPOINT   8     MultiPoint (related points)
+
+   - 3D Shape Types (may include "measure" values for vertices):
+
+        #define SHPT_POINTZ       11
+        #define SHPT_ARCZ         13
+        #define SHPT_POLYGONZ     15
+        #define SHPT_MULTIPOINTZ  18
+
+   - 2D + Measure Types:
+
+        #define SHPT_POINTM       21
+        #define SHPT_ARCM         23
+        #define SHPT_POLYGONM     25
+        #define SHPT_MULTIPOINTM  28
+
+   - Complex (TIN-like) with Z, and Measure:
+
+        #define SHPT_MULTIPATCH  31
