@@ -1,7 +1,7 @@
 CXX = g++
 AR = ar
 FLAGS = -Wall -O2 -std=c++11
-LIBS = libshp.a timeit.a
+LIBS = libshp.a libtimeit.a
 
 all : main
 
