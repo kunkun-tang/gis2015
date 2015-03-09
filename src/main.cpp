@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 #include <fstream>
 #include <vector>
 #include <unordered_map>
@@ -15,7 +16,25 @@
 
 namespace gis2015 {
 
-typedef double coord_t;
+#define DEBUG_SHPOBJ(ind)                               \
+  {                                                     \
+    SHPObject *o = SHPReadObject(sh, ind);              \
+    printf("ShapeId: %d\nParts: %d\nVertices: %d\n",    \
+           o->nShapeId, o->nParts, o->nVertices);       \
+    printf("X: [%f, %f]\n", o->dfXMin, o->dfXMax);      \
+    for (int i = 0; i < o->nVertices; ++i)              \
+      printf(" %f", o->padfX[i]);                       \
+    printf("\nY: [%f, %f]\n", o->dfYMin, o->dfYMax);    \
+    for (int i = 0; i < o->nVertices; ++i)              \
+      printf(" %f", o->padfY[i]);                       \
+    printf("\nM: [%f, %f]\n", o->dfMMin, o->dfMMax);    \
+    for (int i = 0; i < o->nVertices; ++i)              \
+      printf(" %f", o->padfM[i]);                       \
+    printf("\n");                                       \
+    SHPDestroyObject(o);                                \
+  }
+
+typedef int coord_t;
 
 struct vertex {
   coord_t x, y;
@@ -31,11 +50,11 @@ struct junction : public vertex {
       : vertex(a, b) { }
 };
 
-struct road {
+struct arc {
   int len;
   int maxspeed;
 
-  road(int l = 0, int v = 0)
+  arc(int l = 0, int v = 0)
       : len(l), maxspeed(v) { }
 };
 
@@ -45,7 +64,7 @@ struct barrier {
 
 struct graph {
   std::vector<junction> V;
-  std::vector<road> E;
+  std::vector<arc> E;
   std::vector<barrier> B;
 };
 
@@ -74,19 +93,7 @@ cons_graph(graph &g, const std::string &barr, const std::string &junc,
 #endif
 
 #if (1 == DEBUG)
-  {
-    SHPObject *o = SHPReadObject(sh, 0);
-    printf("ShapeId: %d\nParts: %d\nVertices: %d\n",
-           o->nShapeId, o->nParts, o->nVertices);
-    printf("X:");
-    for (int i = 0; i < o->nVertices; ++i)
-      printf(" %f", o->padfX[i]);
-    printf("\nY:");
-    for (int i = 0; i < o->nVertices; ++i)
-      printf(" %f", o->padfY[i]);
-    printf("\n");
-    SHPDestroyObject(o);
-  }
+  DEBUG_SHPOBJ(0);
 #endif
 
 #if defined(DEBUG)
@@ -103,7 +110,7 @@ cons_graph(graph &g, const std::string &barr, const std::string &junc,
   SHPClose(sh);
 
 #if defined(DEBUG)
-  printf("read %s: %.4f sec\n\n", barr.c_str(), tmr.elapsed());
+  printf("Done %s: %.4f sec\n\n", barr.c_str(), tmr.elapsed());
   tmr.reset();
 #endif
 
@@ -116,24 +123,24 @@ cons_graph(graph &g, const std::string &barr, const std::string &junc,
 
 #if defined(DEBUG)
   printf("Read %s\n Number of Entities: %d\n ShapeType: %d\n",
-         barr.c_str(), nent, ntype);
+         junc.c_str(), nent, ntype);
 #endif
 
   for (int i = 0; i < nent; ++i) {
     SHPObject *o = SHPReadObject(sh, i);
-    g.V.push_back(junction(o->padfX[0], o->padfY[0]));
+    g.V.push_back(junction(round(o->padfX[0]), round(o->padfY[0])));
     SHPDestroyObject(o);
   }
 
   SHPClose(sh);
 
 #if defined(DEBUG)
-  printf("read %s: %.4f sec\n\n", junc.c_str(), tmr.elapsed());
+  printf("Done %s: %.4f sec\n\n", junc.c_str(), tmr.elapsed());
   tmr.reset();
 #endif
 
   /* --------------------------------------------------------------
-   * Read road (edge, line)
+   * Read road (arc)
    * --------------------------------------------------------------
    */
   sh = SHPOpen(road.c_str(), "r");
@@ -145,22 +152,56 @@ cons_graph(graph &g, const std::string &barr, const std::string &junc,
 #endif
 
 #if (1 == DEBUG)
-  {
-    SHPObject *o = SHPReadObject(sh, 2000);
-    printf("ShapeId: %d\nParts: %d\nVertices: %d\n",
-           o->nShapeId, o->nParts, o->nVertices);
-    printf("X:");
-    for (int i = 0; i < o->nVertices; ++i)
-      printf(" %f", o->padfX[i]);
-    printf("\nY:");
-    for (int i = 0; i < o->nVertices; ++i)
-      printf(" %f", o->padfY[i]);
-    printf("\n");
-    SHPDestroyObject(o);
+  DEBUG_SHPOBJ(2015);
+#endif
+
+  for (int i = 0; i < nent; ++i) {
+    SHPObject *o = SHPReadObject(sh, i);
+    double len = 0.;
+    double x = o->padfX[0], y = o->padfY[0];
+
+    for (int j = 1; j < o->nVertices; ++j) {
+      double a = o->padfX[j] - x;
+      double b = o->padfY[j] - y;
+      len += sqrt(a * a + b * b);
+      x = o->padfX[j];
+      y = o->padfY[j];
+    }
+
+    arc e(round(len));
+    g.E.push_back(e);
   }
+
+  SHPClose(sh);
+
+#if defined(DEBUG)
+  printf("Done %s: %.4f sec\n\n", road.c_str(), tmr.elapsed());
+  tmr.reset();
+#endif
+
+  /* --------------------------------------------------------------
+   * Read turn
+   * --------------------------------------------------------------
+   */
+  sh = SHPOpen(road.c_str(), "r");
+  SHPGetInfo(sh, &nent, &ntype, minb, maxb);
+
+#if defined(DEBUG)
+  printf("Read %s\n Number of Entities: %d\n ShapeType: %d\n",
+         turn.c_str(), nent, ntype);
+#endif
+
+#if (1 == DEBUG)
+  DEBUG_SHPOBJ(2015);
 #endif
 
   SHPClose(sh);
+
+#if defined(DEBUG)
+  printf("Done %s: %.4f sec\n\n", turn.c_str(), tmr.elapsed());
+  tmr.reset();
+#endif
+
 }
 
 }

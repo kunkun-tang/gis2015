@@ -94,7 +94,25 @@ solutions for SIGSPATIAL CUP 2015.
    these polygons.  Then for a single point and a polygon, the PIP
    test is constant.  This may yields sub-optimal solution, however
    this will speed up the program significantly.  Further conclusion
-   about the accuracy and speedup will await until our benchmark.
+   about the accuracy and speedup will wait until our benchmark.
+
+** Coordinates
+
+   The coordinates are re-projected into the Universal Transverse
+   Mercator (UTM) \cite{Wikipedia:utm} to make distance computations
+   simple.  In UTM, the coordinates pair \(\langle X, Y\rangle\) uses
+   \(\langle Easting, Northing\rangle\) representation.  Simply put,
+   \(X\) ranges from 167,000 to 833,000, and \(Y\) ranges from 0 (at
+   the equator) to 9,328,000 in the north and 10,000,000 (at the
+   equator) to 1,100,000 in the south.  All are approximate in meters.
+   We are dealing with road network, it's unlikely that any two
+   junctions in the road network are within 1 meter of each other.  So
+   we can safely round the junction coordinate to the nearest integer.
+   Similarly for the road segment length, if they differ no more than
+   1 meter, it's does not matter which to choose.  Although from
+   practical point of view, it's acceptable within 10 meters, this
+   discrepancy may result in some inaccuracy in our shortest path
+   solution.  Further judgement needs to await our benchmark.
 
 * Shortest Path Algorithm
 
@@ -154,4 +172,6 @@ solutions for SIGSPATIAL CUP 2015.
   #  LocalWords:  backend bibtex biblatex addbibresource tex img et al
   #  LocalWords:  undirected isothetic Cherkassky Fredman dijkstra sqrt
   #  LocalWords:  Ahuja printbibliography VanEmdeboas radix Thorup
-  #  LocalWords:  Raman shapefile Warmerdam unordered
+  #  LocalWords:  Raman shapefile Warmerdam unordered marginnote UTM
+#  LocalWords:  microtype marginparsep liang langle rangle utm
+#  LocalWords:  Easting Northing
